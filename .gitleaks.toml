@@ -5,7 +5,6 @@ useDefault = true
 [allowlist]
 description = "Skip placeholder/example values and non-secret files"
 paths = [
-    '''tests?/.*''',
     '''.*\.md''',
     '''.*\.example''',
     '''.*\.sample''',
@@ -276,8 +275,15 @@ tags = ["generic"]
 
 [[rules]]
 id = "generic-secret"
-description = "Generic secret or password variable"
+description = "Generic secret or password variable (with underscore prefix)"
 regex = '''(?i)\b(\w*(?:_SECRET|_PASSWORD|_PASSWD|_PASS|_PWD))\s*[=:]\s*["']?(\S{6,})["']?'''
+severity = "HIGH"
+tags = ["generic"]
+
+[[rules]]
+id = "bare-password-variable"
+description = "Bare password/secret variable name hardcoded (no prefix required)"
+regex = '''(?i)(?:^|[\s,;({])(?:password|passwd|pass|secret|pwd|passphrase)\s*[=:]\s*["'`](\S{4,})["'`]'''
 severity = "HIGH"
 tags = ["generic"]
 
@@ -305,9 +311,9 @@ tags = ["entropy"]
 
 [[rules]]
 id = "high-entropy-function-arg"
-description = "High entropy string passed as a function argument"
-regex = '''(?:password|secret|token|key|auth|credential)\s*[=,(]\s*["'`]([A-Za-z0-9+/=_\-!@#$%^&*]{16,})["'`]'''
-entropy = 4.0
+description = "High entropy string passed as a function argument (keyword or positional)"
+regex = '''(?i)(?:password|passwd|secret|token|key|auth|credential|apikey|passphrase|pwd)\s*[=,(]\s*["'`]([A-Za-z0-9+/=_\-!@#$%^&*]{8,})["'`]'''
+entropy = 3.5
 severity = "HIGH"
 tags = ["entropy"]
 
@@ -359,3 +365,27 @@ description = "JSON field containing a connection URL with credentials"
 regex = '''"(?i)(?:\w+_)?(?:url|uri|dsn|connection)"\s*:\s*"(\w+://[^:@"]+:[^@"]{4,}@[^"]+)"'''
 severity = "CRITICAL"
 tags = ["json", "database"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Bare connection-string literals — no variable name needed
+# Catches: psycopg2.connect("postgres://user:pass@host/db")
+#          or any string literal that IS a connection URL with credentials
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "bare-connection-string-literal"
+description = "Connection URI literal with embedded credentials (no variable name required)"
+regex = '''["'`]((?:postgresql|postgres|mysql|mariadb|mongodb(?:\+srv)?|redis(?:s)?|amqps?|mssql|sqlserver|jdbc:[a-z]+)://[^:@\s"'`]+:[^@\s"'`]{4,}@[^\s"'`]+)["'`]'''
+severity = "CRITICAL"
+tags = ["database", "bare-literal"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PEM / SSH Private Keys
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "private-key-pem"
+description = "PEM-encoded private key header"
+regex = '''-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?:\s+BLOCK)?-----'''
+severity = "CRITICAL"
+tags = ["private-key", "pem"]
