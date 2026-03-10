@@ -1,229 +1,209 @@
 # git-secret-scanner
 
-Global Git hooks that automatically scan every `git commit` and `git push` for hardcoded secrets using [Gitleaks](https://github.com/gitleaks/gitleaks).
+Automatically block hardcoded secrets from ever reaching GitHub — on every `git commit` and `git push`, across **every repository** on your machine.
 
-Secrets are blocked **before** they ever reach GitHub — across every repository on your machine, with no per-project setup needed.
+This works by installing two global Git hooks that run [Gitleaks](https://github.com/gitleaks/gitleaks) in the background. Once set up, you never need to configure anything per-project. It just works everywhere.
+
+---
+
+## Why This Exists
+
+Accidentally committing secrets (API keys, database passwords, tokens) is one of the most common and damaging developer mistakes. This setup catches them **locally** — before they leave your machine — so you never have to deal with secret rotation, GitHub alerts, or security incidents.
 
 ---
 
 ## How It Works
 
-| Hook | Trigger | What it does |
+Git supports **hooks** — scripts that run automatically at specific points in your workflow. This repo configures two of them globally:
+
+| Hook | When it runs | What it does |
 |---|---|---|
-| `pre-commit` | Every `git commit` | Scans only staged files; blocks the commit if a secret is found |
-| `pre-push` | Every `git push` | Full repo scan; blocks the push if a secret is found |
+| `pre-commit` | Before every `git commit` | Extracts staged files into a temp folder and scans them with Gitleaks. If a secret is found, the commit is blocked and you are shown exactly which file and line caused it. |
+| `pre-push` | Before every `git push` | Runs a full Gitleaks scan on the entire repository. If a secret is found anywhere, the push is blocked. |
+
+Setting hooks **globally** (via `core.hooksPath`) means every Git repo on your machine is protected automatically — no need to add hooks to each project individually.
 
 ---
 
 ## Files in This Repo
 
-| File | Place it at (Linux / macOS) | Place it at (Windows) |
+| File | What it is | Where to place it on Windows |
 |---|---|---|
-| `.gitleaks.toml` | `~/.gitleaks.toml` | `C:\Users\<user>\.gitleaks.toml` |
-| `pre-commit` | `~/.git-hooks/pre-commit` | `C:\Users\<user>\.git-hooks\pre-commit` |
-| `pre-push` | `~/.git-hooks/pre-push` | `C:\Users\<user>\.git-hooks\pre-push` |
+| `.gitleaks.toml` | Custom ruleset that tells Gitleaks what to look for | `C:\Users\<user>\.gitleaks.toml` |
+| `pre-commit` | Bash script — the pre-commit hook | `C:\Users\<user>\.git-hooks\pre-commit` |
+| `pre-push` | Bash script — the pre-push hook | `C:\Users\<user>\.git-hooks\pre-push` |
 
 ---
 
-## Linux / macOS Setup
+## Windows Setup — Step by Step
 
 ### Prerequisites
 
-- **Gitleaks** — install via your package manager:
-  ```bash
-  # Fedora / RHEL
-  sudo dnf install gitleaks
+Before you begin, install the following tools. Each one plays a specific role.
 
-  # macOS
-  brew install gitleaks
-  ```
-- **Python 3** — used by the pre-commit hook to parse the JSON report (usually pre-installed)
+---
 
-### Step 1 — Create global hooks directory
+#### 1. Git for Windows
 
-```bash
-mkdir -p ~/.git-hooks
-```
+Git for Windows bundles **Git Bash** — a bash shell for Windows. The hook scripts are written in bash, so Git Bash is what actually runs them when you commit or push.
 
-### Step 2 — Tell Git to use it globally
+Download: https://git-scm.com/download/win
+
+During install, leave all defaults as-is. Git Bash will be installed alongside Git automatically.
+
+After install, verify Git is working:
 
 ```bash
-git config --global core.hooksPath ~/.git-hooks
-```
-
-Verify:
-
-```bash
-git config --global --get core.hooksPath
-```
-
-### Step 3 — Copy the hook scripts
-
-```bash
-cp pre-commit ~/.git-hooks/pre-commit
-cp pre-push   ~/.git-hooks/pre-push
-```
-
-### Step 4 — Make them executable
-
-```bash
-chmod +x ~/.git-hooks/pre-commit
-chmod +x ~/.git-hooks/pre-push
-```
-
-### Step 5 — Copy the Gitleaks config
-
-```bash
-cp .gitleaks.toml ~/.gitleaks.toml
-```
-
-### Step 6 — Verify
-
-```bash
-gitleaks version
-git config --global --get core.hooksPath
+git --version
 ```
 
 ---
 
-## Windows Setup
+#### 2. Gitleaks
 
-Git for Windows ships with **Git Bash**, which runs the same bash scripts as Linux. No changes to the hook files are needed.
+Gitleaks is the tool that does the actual secret scanning. It reads your files, applies the rules from `.gitleaks.toml`, and reports any matches.
 
-### Prerequisites
-
-- **Git for Windows** (includes Git Bash): https://git-scm.com/download/win
-- **Gitleaks** — choose one install method:
-  ```powershell
-  # Option A — winget (recommended)
-  winget install gitleaks
-
-  # Option B — Chocolatey
-  choco install gitleaks
-  ```
-  Option C — Manual: download `gitleaks.exe` from [GitHub Releases](https://github.com/gitleaks/gitleaks/releases) and place it in a folder on your `PATH` (e.g. `C:\Windows\System32` or `C:\tools\`).
-
-- **Python 3**: https://python.org — required for JSON parsing in the pre-commit hook. Make sure `python3` is on your `PATH` (tick "Add Python to PATH" during install).
-
-Verify both are working in Git Bash:
-
-```bash
-gitleaks version
-python3 --version
-```
-
-### Step 1 — Create global hooks directory
-
-Run in **PowerShell** or **Git Bash**:
+Install via **winget** (recommended — built into Windows 10/11):
 
 ```powershell
-# PowerShell
+winget install gitleaks
+```
+
+Or via **Chocolatey** if you have it:
+
+```powershell
+choco install gitleaks
+```
+
+Or **manually**: download `gitleaks.exe` from [GitHub Releases](https://github.com/gitleaks/gitleaks/releases), then place it in `C:\Windows\System32\` or any folder that is on your system `PATH`.
+
+Verify it works (open Git Bash or PowerShell):
+
+```bash
+gitleaks version
+```
+
+You should see a version number like `v8.x.x`. If you get "command not found", gitleaks is not on your PATH — revisit the install step.
+
+---
+
+### Step 1 — Create the global hooks directory
+
+Git hooks need to live in a dedicated folder. You are creating this folder at a fixed location in your home directory so Git knows where to find it.
+
+Open **PowerShell** and run:
+
+```powershell
 mkdir $HOME\.git-hooks
 ```
 
-```bash
-# Git Bash
-mkdir -p ~/.git-hooks
-```
+This creates `C:\Users\<your-username>\.git-hooks\`.
 
-### Step 2 — Tell Git to use it globally
+---
+
+### Step 2 — Tell Git to use that folder for all repos
+
+By default, Git looks for hooks inside each repo's `.git/hooks/` folder. This command overrides that globally — telling Git to look in `~/.git-hooks/` instead, for every repo on your machine.
 
 ```bash
 git config --global core.hooksPath "$HOME/.git-hooks"
 ```
 
-Verify:
+Confirm it was saved correctly:
 
 ```bash
 git config --global --get core.hooksPath
 ```
 
+Expected output:
+
+```
+C:/Users/<your-username>/.git-hooks
+```
+
+---
+
 ### Step 3 — Copy the hook scripts
 
-In **Git Bash** (from this repo's directory):
+Open **Git Bash** inside this repo's folder (right-click the folder → "Open Git Bash here") and run:
 
 ```bash
 cp pre-commit ~/.git-hooks/pre-commit
 cp pre-push   ~/.git-hooks/pre-push
 ```
 
-> **Important:** The files must have **no file extension**. If Windows saves them as `pre-commit.txt` the hooks will not run.
+> **Critical — no file extensions:** Windows sometimes adds `.txt` or other extensions to files. The hook files **must** be named exactly `pre-commit` and `pre-push` with no extension at all, otherwise Git will not recognise them and they will silently never run.
+>
+> To check: open `C:\Users\<user>\.git-hooks\` in File Explorer, go to **View → Show → File name extensions**, and confirm there is no extension on the files.
+
+---
 
 ### Step 4 — Copy the Gitleaks config
 
-```bash
-# Git Bash
-cp .gitleaks.toml ~/.gitleaks.toml
-```
+The `.gitleaks.toml` file contains all the detection rules — what patterns to look for, what to ignore, and how severe each match is. Without it, Gitleaks falls back to its built-in defaults only.
+
+In **PowerShell**:
 
 ```powershell
-# PowerShell
 Copy-Item .gitleaks.toml "$HOME\.gitleaks.toml"
 ```
 
-### Step 5 — Verify
+Or in **Git Bash**:
 
 ```bash
+cp .gitleaks.toml ~/.gitleaks.toml
+```
+
+This places the config at `C:\Users\<user>\.gitleaks.toml`, which is where the hook scripts expect to find it.
+
+---
+
+### Step 5 — Verify the full setup
+
+Run these checks to confirm everything is in place:
+
+```bash
+# Gitleaks is installed and accessible
 gitleaks version
+
+# Git is pointing to the right hooks folder
 git config --global --get core.hooksPath
+
+# Hook files exist in the right place
+ls ~/.git-hooks/
+```
+
+Expected output for the last command:
+
+```
+pre-commit  pre-push
 ```
 
 ---
 
-## Linux vs Windows — Quick Comparison
+### Step 6 — Test it
 
-| Item | Linux / macOS | Windows |
-|---|---|---|
-| Install gitleaks | `sudo dnf install gitleaks` | `winget install gitleaks` |
-| Hooks directory | `~/.git-hooks/` | `C:\Users\<user>\.git-hooks\` |
-| Hook scripts | bash (`#!/bin/bash`) | Same bash scripts via Git Bash |
-| Config file | `~/.gitleaks.toml` | `C:\Users\<user>\.gitleaks.toml` |
-| Make executable | `chmod +x pre-commit` | Not needed in Git Bash |
-| git config command | Same on both platforms | Same on both platforms |
+The easiest way to confirm the hooks are working is to stage a file that contains a fake secret and try to commit it.
 
----
+```bash
+# Create a test file with a fake AWS key
+echo 'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE' > test-secret.txt
 
-## What Gets Detected
+# Stage it
+git add test-secret.txt
 
-The `.gitleaks.toml` config covers:
+# Try to commit — this should be blocked
+git commit -m "test"
+```
 
-- **AWS** — Access Keys, Secret Keys, Session Tokens, Account IDs
-- **AWS RDS** — connection strings, passwords, usernames
-- **PostgreSQL** — connection URLs, passwords
-- **MongoDB** — connection URIs, passwords
-- **Redis** — passwords, auth tokens, connection URLs
-- **RabbitMQ** — passwords, AMQP connection URLs
-- **MinIO** — secret keys, access keys
-- **Supabase** — service role keys, database passwords
-- **Auth0** — client secrets, client IDs, management tokens
-- **SMTP / Mailer** — passwords, connection URLs, Gmail app passwords
-- **Google / GCP** — API keys
-- **JWT** — signing secrets
-- **Generic fallbacks** — any `API_KEY`, `SECRET`, `PASSWORD`, `TOKEN` variable
-- **Entropy-based detection** — high-randomness strings even without a recognizable key name
-- **JSON env files** — `.env.json` style password/secret/connection fields
-
-### Global Allowlist
-
-The following are automatically skipped to reduce false positives:
-
-- Test directories (`tests/`, `test/`)
-- Documentation files (`.md`, `.example`, `.sample`, `.template`, `.dist`)
-- Placeholder values (`example`, `placeholder`, `your_key_here`, `changeme`, `xxxxxx`, `000000`)
-- Environment variable references (`${VAR}`, `$VAR`, `%VAR%`)
-
----
-
-## Pre-commit Hook Output
-
-When a secret is detected, the commit is blocked with a clear report:
+You should see output like this:
 
 ```
 🔍 Gitleaks: Scanning staged files for secrets...
 
 Secrets found:
 
-  ✗  .env  →  line 3  →  aws-access-key-id
+  ✗  test-secret.txt  →  line 1  →  aws-access-key-id
 
 ╔══════════════════════════════════════════════╗
 ║   ❌  SECRET DETECTED — COMMIT BLOCKED       ║
@@ -233,36 +213,101 @@ Secrets found:
   Then: git add <file> && git commit again.
 ```
 
+If you see this, the setup is working correctly. Clean up the test file:
+
+```bash
+git restore --staged test-secret.txt
+rm test-secret.txt
+```
+
+---
+
+## What Gets Detected
+
+The `.gitleaks.toml` ruleset covers a wide range of secrets across common services:
+
+| Category | What is detected |
+|---|---|
+| AWS | Access Key IDs (`AKIA…`), Secret Access Keys, Session Tokens, Account IDs |
+| AWS RDS | Connection strings with embedded credentials, passwords, usernames |
+| PostgreSQL | Connection URLs with credentials, passwords |
+| MongoDB | Connection URIs with credentials, passwords |
+| Redis | Passwords, auth tokens, connection URLs |
+| RabbitMQ | Passwords, AMQP connection URLs |
+| MinIO | Secret keys, access keys |
+| Supabase | Service role keys, anon keys (JWT format), database passwords |
+| Auth0 | Client secrets, client IDs, management API tokens |
+| SMTP / Email | Passwords, connection URLs, Gmail app passwords |
+| Google / GCP | API keys (`AIza…`) |
+| JWT | Signing secrets |
+| Generic | Any variable named `API_KEY`, `SECRET`, `PASSWORD`, `TOKEN`, `ACCESS_KEY`, etc. |
+| Entropy-based | High-randomness strings assigned to any variable — catches secrets with non-standard names |
+| JSON env files | Password, secret, token, and connection fields in `.env.json` style files |
+
+### What is automatically ignored (allowlist)
+
+To keep false positives low, the following are skipped automatically:
+
+- Files in `tests/` or `test/` directories
+- `.md`, `.example`, `.sample`, `.template`, `.dist` files
+- Values that look like placeholders: `example`, `placeholder`, `your_key_here`, `changeme`, `xxxxxx`, `000000`
+- Environment variable references: `${VAR}`, `$VAR`, `%VAR%` — these are safe references, not actual secrets
+
 ---
 
 ## Troubleshooting
 
-**Hooks are not running**
+**Hooks are not running at all (commit goes through without any scan output)**
+
+The `core.hooksPath` setting is probably missing or wrong. Check it:
 
 ```bash
 git config --global --get core.hooksPath
-# Should return: /home/<user>/.git-hooks  (or Windows equivalent)
 ```
+
+It must return a path. If it returns nothing, re-run Step 2. If it returns a path, confirm the hook files actually exist there with `ls ~/.git-hooks/`.
+
+Also check the hook files have no extension — a file named `pre-commit.txt` will never run.
+
+---
 
 **`gitleaks: command not found`**
 
-Make sure gitleaks is installed and on your `PATH`:
+Gitleaks is not on your system PATH. Try:
 
-```bash
-which gitleaks
-gitleaks version
+```powershell
+winget install gitleaks
 ```
 
-**`python3: command not found` (Windows)**
+Then close and reopen Git Bash. If it still doesn't work, find where `gitleaks.exe` was installed and add that folder to your system PATH via **System Properties → Environment Variables**.
 
-Install Python 3 from https://python.org and tick "Add Python to PATH" during setup. Then restart Git Bash.
+---
 
-**Hook files not executable (Linux / macOS)**
 
-```bash
-chmod +x ~/.git-hooks/pre-commit ~/.git-hooks/pre-push
+**Hook files not being recognised (have wrong name)**
+
+Open `C:\Users\<user>\.git-hooks\` in File Explorer. Go to **View → Show → File name extensions**. The files must be named `pre-commit` and `pre-push` — no `.txt`, no `.sh`, no anything. If they have an extension, rename them to remove it.
+
+---
+
+**Gitleaks is flagging something that is not a real secret (false positive)**
+
+Add the value or file path to the `[allowlist]` section in `~/.gitleaks.toml`. For example, to ignore a specific file:
+
+```toml
+[allowlist]
+paths = [
+    '''path/to/your/file\.js'''
+]
 ```
 
-**Hook file has wrong name (Windows)**
+Or to ignore a specific string pattern:
 
-Open `C:\Users\<user>\.git-hooks\` in File Explorer. Make sure the files are named exactly `pre-commit` and `pre-push` with no extension. Enable "File name extensions" in Explorer's View menu to check.
+```toml
+[allowlist]
+regexes = [
+    '''your-non-secret-pattern'''
+]
+```
+
+Then save the file — the change takes effect immediately on the next commit.
