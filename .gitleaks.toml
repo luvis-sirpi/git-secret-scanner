@@ -1,0 +1,361 @@
+[extend]
+useDefault = true
+
+# ─── Global Allowlist ────────────────────────────────────────────────────────
+[allowlist]
+description = "Skip placeholder/example values and non-secret files"
+paths = [
+    '''tests?/.*''',
+    '''.*\.md''',
+    '''.*\.example''',
+    '''.*\.sample''',
+    '''.*\.template''',
+    '''.*\.dist'''
+]
+regexes = [
+    '''(?i)example''',
+    '''(?i)placeholder''',
+    '''(?i)your[_-].*here''',
+    '''(?i)change[_-]?me''',
+    '''(?i)replace[_-]?me''',
+    '''<[^>]+>''',
+    '''\*{3,}''',
+    '''xxxxxx''',
+    '''000000'''
+]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# AWS (Access Keys, Secret Keys, Session Tokens)
+# Covers: AWS_, WB_AWS_, MR_AWS_, or any prefix
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "aws-access-key-id"
+description = "AWS Access Key ID"
+regex = '''(?i)\b(\w*AWS_ACCESS_KEY_ID)\s*[=:]\s*["']?(AKIA[0-9A-Z]{16})["']?'''
+severity = "CRITICAL"
+tags = ["aws"]
+
+[[rules]]
+id = "aws-secret-access-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)\b(\w*AWS_SECRET_ACCESS_KEY)\s*[=:]\s*["']?([A-Za-z0-9/+=]{40})["']?'''
+severity = "CRITICAL"
+tags = ["aws"]
+
+[[rules]]
+id = "aws-session-token"
+description = "AWS Session Token"
+regex = '''(?i)\b(\w*AWS_SESSION_TOKEN)\s*[=:]\s*["']?([A-Za-z0-9/+=]{100,})["']?'''
+severity = "CRITICAL"
+tags = ["aws"]
+
+[[rules]]
+id = "aws-account-id"
+description = "AWS Account ID (12-digit number in sensitive context)"
+regex = '''(?i)(AWS_ACCOUNT_ID)\s*[=:]\s*["']?([0-9]{12})["']?'''
+severity = "HIGH"
+tags = ["aws"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# AWS RDS
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "rds-connection-url"
+description = "RDS connection string with embedded credentials"
+regex = '''(?i)(\w*(?:RDS_URL|RDS_CONNECTION|DATABASE_URL|DB_URL))\s*[=:]\s*["']?((?:postgresql|postgres|mysql|mariadb|jdbc:[^:]+)(\+\w+)?://[^:@\s"']+:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "CRITICAL"
+tags = ["aws", "rds", "database"]
+
+[[rules]]
+id = "rds-password"
+description = "RDS / DB password field"
+regex = '''(?i)(\w*(?:RDS_PASSWORD|RDS_PASS|DB_PASSWORD|DB_PASS|DATABASE_PASSWORD))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "CRITICAL"
+tags = ["aws", "rds"]
+
+[[rules]]
+id = "rds-username"
+description = "RDS / DB username field"
+regex = '''(?i)(\w*(?:RDS_USER(?:NAME)?|DB_USER(?:NAME)?|DATABASE_USER(?:NAME)?))\s*[=:]\s*["']?(\S{3,})["']?'''
+severity = "MEDIUM"
+tags = ["aws", "rds"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PostgreSQL
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "postgres-url"
+description = "PostgreSQL connection string with credentials"
+regex = '''(?i)(\w*(?:POSTGRES(?:QL)?_URL|PG_URL|DATABASE_URL|DB_URL|DSN))\s*[=:]\s*["']?(postgres(?:ql)?(\+\w+)?://[^:@\s"']+:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "CRITICAL"
+tags = ["postgres"]
+
+[[rules]]
+id = "postgres-password"
+description = "PostgreSQL password"
+regex = '''(?i)(\w*(?:POSTGRES(?:QL)?_PASSWORD|POSTGRES(?:QL)?_PASS|PG_PASSWORD|PG_PASS|PGPASSWORD))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "CRITICAL"
+tags = ["postgres"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# MongoDB
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "mongodb-url"
+description = "MongoDB connection URI with credentials"
+regex = '''(?i)(\w*(?:MONGO(?:DB)?_URI|MONGO(?:DB)?_URL|MONGO(?:DB)?_CONNECTION))\s*[=:]\s*["']?(mongodb(?:\+srv)?://[^:@\s"']+:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "CRITICAL"
+tags = ["mongodb"]
+
+[[rules]]
+id = "mongodb-password"
+description = "MongoDB password field"
+regex = '''(?i)(\w*(?:MONGO(?:DB)?_PASSWORD|MONGO(?:DB)?_PASS))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "CRITICAL"
+tags = ["mongodb"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Redis
+# Covers: REDIS_PASSWORD, REDIS_KPASSWORD, REDIS_AUTH, and prefixed variants
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "redis-password"
+description = "Redis password / auth token"
+regex = '''(?i)(\w*REDIS\w*(?:PASSWORD|PASS|AUTH|SECRET|TOKEN))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "HIGH"
+tags = ["redis"]
+
+[[rules]]
+id = "redis-url"
+description = "Redis connection URL with credentials"
+regex = '''(?i)(\w*REDIS\w*(?:URL|URI|DSN))\s*[=:]\s*["']?(redis(?:s)?://[^:@\s"']*:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "HIGH"
+tags = ["redis"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# RabbitMQ
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "rabbitmq-password"
+description = "RabbitMQ password"
+regex = '''(?i)(\w*RABBIT(?:MQ)?_(?:PASSWORD|PASS|SECRET))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "HIGH"
+tags = ["rabbitmq"]
+
+[[rules]]
+id = "rabbitmq-url"
+description = "RabbitMQ AMQP connection URL with credentials"
+regex = '''(?i)(\w*(?:RABBIT(?:MQ)?_URL|AMQP_URL|AMQP_URI|BROKER_URL))\s*[=:]\s*["']?(amqps?://[^:@\s"']+:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "HIGH"
+tags = ["rabbitmq"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# MinIO
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "minio-secret-key"
+description = "MinIO Secret Key"
+regex = '''(?i)(\w*MINIO_(?:SECRET_KEY|SECRET|ACCESS_SECRET|ROOT_PASSWORD))\s*[=:]\s*["']?(\S{8,})["']?'''
+severity = "CRITICAL"
+tags = ["minio"]
+
+[[rules]]
+id = "minio-access-key"
+description = "MinIO Access Key / Root User"
+regex = '''(?i)(\w*MINIO_(?:ACCESS_KEY|ROOT_USER|USER))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "HIGH"
+tags = ["minio"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Supabase
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "supabase-service-key"
+description = "Supabase service role / anon key (JWT starting with eyJ)"
+regex = '''(?i)(\w*SUPABASE_(?:KEY|SERVICE_KEY|SERVICE_ROLE_KEY|ANON_KEY|SECRET))\s*[=:]\s*["']?(eyJ[A-Za-z0-9_\-\.]{50,})["']?'''
+severity = "CRITICAL"
+tags = ["supabase"]
+
+[[rules]]
+id = "supabase-db-password"
+description = "Supabase database password"
+regex = '''(?i)(\w*SUPABASE_(?:DB_PASSWORD|DATABASE_PASSWORD|PASSWORD))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "CRITICAL"
+tags = ["supabase"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Auth0
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "auth0-client-secret"
+description = "Auth0 Client Secret"
+regex = '''(?i)(AUTH0_CLIENT_SECRET)\s*[=:]\s*["']?([A-Za-z0-9_\-\.]{40,})["']?'''
+severity = "CRITICAL"
+tags = ["auth0"]
+
+[[rules]]
+id = "auth0-client-id"
+description = "Auth0 Client ID"
+regex = '''(?i)(AUTH0_CLIENT_ID)\s*[=:]\s*["']?([A-Za-z0-9]{20,})["']?'''
+severity = "HIGH"
+tags = ["auth0"]
+
+[[rules]]
+id = "auth0-management-token"
+description = "Auth0 Management API token"
+regex = '''(?i)(AUTH0_(?:MANAGEMENT_TOKEN|MGMT_TOKEN|API_TOKEN))\s*[=:]\s*["']?(eyJ[A-Za-z0-9_\-\.]{50,})["']?'''
+severity = "CRITICAL"
+tags = ["auth0"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Mailer / SMTP / App Passwords
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "smtp-password"
+description = "SMTP / mailer password or app password"
+regex = '''(?i)(\w*(?:SMTP_PASSWORD|SMTP_PASS|EMAIL_PASSWORD|EMAIL_PASS|MAIL_PASSWORD|MAIL_PASS|MAILER_PASSWORD|WB_PASSWORD))\s*[=:]\s*["']?(\S{4,})["']?'''
+severity = "HIGH"
+tags = ["mailer", "smtp"]
+
+[[rules]]
+id = "smtp-url"
+description = "SMTP connection URL with credentials"
+regex = '''(?i)(\w*(?:SMTP_URL|MAIL_URL|MAILER_URL|EMAIL_URL))\s*[=:]\s*["']?(smtps?://[^:@\s"']+:[^@\s"']{4,}@[^\s"']+)["']?'''
+severity = "HIGH"
+tags = ["mailer", "smtp"]
+
+[[rules]]
+id = "gmail-app-password"
+description = "Gmail app password (16-char format with spaces)"
+regex = '''(?i)(\w*(?:EMAIL_PASSWORD|GMAIL_PASSWORD|APP_PASSWORD))\s*[=:]\s*["']?([a-z]{4} [a-z]{4} [a-z]{4} [a-z]{4})["']?'''
+severity = "HIGH"
+tags = ["mailer", "gmail"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Google API
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "google-api-key"
+description = "Google / GCP API Key"
+regex = '''(?i)(\w*(?:GOOGLE_API_KEY|GCP_API_KEY|MAPS_API_KEY|FIREBASE_API_KEY))\s*[=:]\s*["']?(AIza[0-9A-Za-z\-_]{35})["']?'''
+severity = "CRITICAL"
+tags = ["google", "gcp"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# JWT Secrets
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT signing secret"
+regex = '''(?i)(JWT_\w*(?:SECRET|KEY|SIGNING_KEY))\s*[=:]\s*["']?([A-Za-z0-9_\-!@#$%^&*]{12,})["']?'''
+severity = "HIGH"
+tags = ["jwt"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Generic fallbacks (catches anything not covered above)
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key or token variable"
+regex = '''(?i)\b(\w*(?:API_KEY|APIKEY|API_TOKEN|ACCESS_KEY|ACCESS_TOKEN|AUTH_TOKEN|BEARER_TOKEN|PRIVATE_KEY|SECRET_KEY))\s*[=:]\s*["']?([A-Za-z0-9_\-/+=\.]{16,})["']?'''
+severity = "HIGH"
+tags = ["generic"]
+
+[[rules]]
+id = "generic-secret"
+description = "Generic secret or password variable"
+regex = '''(?i)\b(\w*(?:_SECRET|_PASSWORD|_PASSWD|_PASS|_PWD))\s*[=:]\s*["']?(\S{6,})["']?'''
+severity = "HIGH"
+tags = ["generic"]
+
+[[rules]]
+id = "generic-connection-string"
+description = "Any connection string with embedded credentials"
+regex = '''(?i)(\w*(?:CONNECTION_STRING|CONN_STR|DSN|DATABASE_URL|DB_URL))\s*[=:]\s*["']?(\w+(\+\w+)?://[^:@\s"']+:[^@\s"']{4,}@\S+)["']?'''
+severity = "CRITICAL"
+tags = ["generic", "database"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# Entropy-based detection — catches hardcoded secrets with no recognizable key
+# Looks for high-randomness strings assigned to ANY variable or passed as values
+# entropy = 4.0 means: flag only if the string is random enough to be a secret
+# (real words score ~3.0, real secrets score ~4.5+)
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "high-entropy-assignment"
+description = "High entropy string assigned to a variable (any language)"
+regex = '''(?i)(?:=|:=|:\s*)\s*["'`]([A-Za-z0-9+/=_\-!@#$%^&*]{20,})["'`]'''
+entropy = 4.0
+severity = "HIGH"
+tags = ["entropy"]
+
+[[rules]]
+id = "high-entropy-function-arg"
+description = "High entropy string passed as a function argument"
+regex = '''(?:password|secret|token|key|auth|credential)\s*[=,(]\s*["'`]([A-Za-z0-9+/=_\-!@#$%^&*]{16,})["'`]'''
+entropy = 4.0
+severity = "HIGH"
+tags = ["entropy"]
+
+[[rules]]
+id = "token-in-git-url"
+description = "Hardcoded token/password embedded in a git or HTTPS URL"
+regex = '''https?://([A-Za-z0-9+/=_\-\.]{16,})@(?:github\.com|gitlab\.com|bitbucket\.org|[a-zA-Z0-9.\-]+)'''
+entropy = 3.5
+severity = "CRITICAL"
+tags = ["token", "git-url"]
+
+[rules.allowlist]
+description = "Allow env var references like ${VAR} or %VAR%"
+regexes = [
+    '''\$\{[A-Z_]+\}''',
+    '''\$[A-Z_]+''',
+    '''%[A-Z_]+%'''
+]
+
+[[rules]]
+id = "bearer-token"
+description = "Bearer token hardcoded in code (Authorization header etc.)"
+regex = '''[Bb]earer\s+["']?([A-Za-z0-9+/=_\-\.]{20,})["']?'''
+entropy = 3.5
+severity = "HIGH"
+tags = ["entropy", "bearer"]
+
+# ════════════════════════════════════════════════════════════════════════════════
+# JSON-format env files (your .env.json pattern)
+# ════════════════════════════════════════════════════════════════════════════════
+
+[[rules]]
+id = "json-password"
+description = "JSON field named password/passwd/pass"
+regex = '''"(?i)(?:\w+_)?(?:password|passwd|pass)"\s*:\s*"([^"]{4,})"'''
+severity = "HIGH"
+tags = ["json"]
+
+[[rules]]
+id = "json-secret-key"
+description = "JSON field named secret/api_key/token"
+regex = '''"(?i)(?:\w+_)?(?:secret|api_key|token|access_key)"\s*:\s*"([^"]{8,})"'''
+severity = "HIGH"
+tags = ["json"]
+
+[[rules]]
+id = "json-connection-string"
+description = "JSON field containing a connection URL with credentials"
+regex = '''"(?i)(?:\w+_)?(?:url|uri|dsn|connection)"\s*:\s*"(\w+://[^:@"]+:[^@"]{4,}@[^"]+)"'''
+severity = "CRITICAL"
+tags = ["json", "database"]
