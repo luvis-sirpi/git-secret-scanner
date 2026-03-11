@@ -3,7 +3,7 @@
 echo ""
 echo "🔍 Gitleaks: Scanning repo before push to GitHub..."
 
-REPORT=$(gitleaks detect --redact --report-format json --report-path /tmp/gitleaks-report.json 2>&1)
+gitleaks detect --redact --verbose
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
@@ -12,20 +12,10 @@ if [ $EXIT_CODE -ne 0 ]; then
     echo "║   ❌  SECRET DETECTED — PUSH BLOCKED         ║"
     echo "╚══════════════════════════════════════════════╝"
     echo ""
-    echo "   Secrets found in the following locations:"
-    echo ""
-    if command -v jq &>/dev/null && [ -f /tmp/gitleaks-report.json ]; then
-        jq -r '.[] | "   📄 File : \(.File)\n   📍 Line : \(.StartLine)\n   🔑 Rule : \(.RuleID)\n   🔒 Commit: \(.Commit[:8])\n"' /tmp/gitleaks-report.json
-    else
-        echo "$REPORT"
-    fi
     echo "   Fix the above, then try pushing again."
     echo ""
-    rm -f /tmp/gitleaks-report.json
     exit 1
 fi
-
-rm -f /tmp/gitleaks-report.json
 
 echo "✅ Clean — pushing to GitHub."
 echo ""

@@ -31,7 +31,8 @@ gitleaks detect \
   --source="$TMPDIR" \
   --config="$HOME/.gitleaks.toml" \
   --redact \
-  --no-git
+  --no-git \
+  --verbose
 
 EXIT_CODE=$?
 
