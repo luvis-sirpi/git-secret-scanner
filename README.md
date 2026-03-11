@@ -20,6 +20,15 @@ Set it up once — it works everywhere, no per-project config needed.
 winget install gitleaks
 ```
 
+> **Important:** After installation, add `gitleaks` to your system PATH if it isn't already.
+>
+> - Open **System Properties → Advanced → Environment Variables**
+> - Under **System variables**, select **Path → Edit → New**
+> - Add the folder path where `gitleaks.exe` was installed
+> - Click **OK**, then close and reopen your terminal
+>
+> Without this, `gitleaks: command not found` will appear and hooks will not run.
+
 Verify:
 
 ```bash
