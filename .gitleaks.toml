@@ -3,14 +3,7 @@ useDefault = true
 
 # ─── Global Allowlist ────────────────────────────────────────────────────────
 [allowlist]
-description = "Skip placeholder/example values and non-secret files"
-paths = [
-    '''.*\.md''',
-    '''.*\.example''',
-    '''.*\.sample''',
-    '''.*\.template''',
-    '''.*\.dist'''
-]
+description = "Skip placeholder/example values"
 regexes = [
     '''(?i)example''',
     '''(?i)placeholder''',

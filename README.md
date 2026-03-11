@@ -124,9 +124,10 @@ rm secret-test.txt
 
 ## What Is Ignored (False Positive Prevention)
 
+All file types are scanned — no directories or extensions are excluded.
+
 | Ignored | Reason |
 |---|---|
-| `.md`, `.example`, `.sample`, `.template`, `.dist` files | Documentation and template files |
 | `example`, `placeholder`, `changeme`, `xxxxxx` values | Clearly fake placeholder values |
 | `${VAR}`, `$VAR`, `%VAR%` references | Safe env var references, not actual secrets |
 
