@@ -27,14 +27,18 @@ for FILE in $STAGED_FILES; do
   fi
 done
 
+GL_OUT=$(mktemp)
+
 gitleaks detect \
   --source="$TMPDIR" \
   --config="$HOME/.gitleaks.toml" \
   --redact \
   --no-git \
-  --verbose
+  --verbose > "$GL_OUT" 2>&1
 
 EXIT_CODE=$?
+sed "s|$TMPDIR/||g" "$GL_OUT"
+rm -f "$GL_OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
   echo ""
