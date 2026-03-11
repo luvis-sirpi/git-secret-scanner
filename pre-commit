@@ -17,28 +17,13 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" EXIT
-
-for FILE in $STAGED_FILES; do
-  if git show ":$FILE" >/dev/null 2>&1; then
-    mkdir -p "$TMPDIR/$(dirname $FILE)"
-    git show ":$FILE" >"$TMPDIR/$FILE"
-  fi
-done
-
-GL_OUT=$(mktemp)
-
-gitleaks detect \
-  --source="$TMPDIR" \
+gitleaks protect \
+  --staged \
   --config="$HOME/.gitleaks.toml" \
   --redact \
-  --no-git \
-  --verbose > "$GL_OUT" 2>&1
+  --verbose
 
 EXIT_CODE=$?
-sed "s|$TMPDIR/||g" "$GL_OUT"
-rm -f "$GL_OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
   echo ""

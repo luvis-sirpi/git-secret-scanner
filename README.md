@@ -1,5 +1,6 @@
 # git-secret-scanner
 
+
 Block hardcoded secrets from reaching GitHub — automatically, on every `git commit`, across **every repo on your machine**.
 
 ---

@@ -3,18 +3,18 @@
 echo ""
 echo "🔍 Gitleaks: Scanning repo before push to GitHub..."
 
-gitleaks detect --redact --verbose
+gitleaks detect --config="$HOME/.gitleaks.toml" --redact --verbose
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo "╔══════════════════════════════════════════════╗"
-    echo "║   ❌  SECRET DETECTED — PUSH BLOCKED         ║"
-    echo "╚══════════════════════════════════════════════╝"
-    echo ""
-    echo "   Fix the above, then try pushing again."
-    echo ""
-    exit 1
+  echo ""
+  echo "╔══════════════════════════════════════════════╗"
+  echo "║   ❌  SECRET DETECTED — PUSH BLOCKED         ║"
+  echo "╚══════════════════════════════════════════════╝"
+  echo ""
+  echo "   Fix the above, then try pushing again."
+  echo ""
+  exit 1
 fi
 
 echo "✅ Clean — pushing to GitHub."
