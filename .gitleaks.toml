@@ -298,7 +298,7 @@ tags = ["generic", "database"]
 id = "high-entropy-assignment"
 description = "High entropy string assigned to a variable (any language)"
 regex = '''(?i)(?:=|:=|:\s*)\s*["'`]([A-Za-z0-9+/=_\-!@#$%^&*]{20,})["'`]'''
-entropy = 4.0
+entropy = 4.5
 severity = "HIGH"
 tags = ["entropy"]
 
